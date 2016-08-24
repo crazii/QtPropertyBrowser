@@ -192,6 +192,7 @@ private:
     Q_PRIVATE_SLOT(d_func(), void slotEchoModeChanged(QtProperty *, int))
     Q_PRIVATE_SLOT(d_func(), void slotReadOnlyChanged(QtProperty *, bool))
     Q_PRIVATE_SLOT(d_func(), void slotSetValue(const QString &))
+	Q_PRIVATE_SLOT(d_func(), void slotEndEdit())
     Q_PRIVATE_SLOT(d_func(), void slotEditorDestroyed(QObject *))
 };
 
