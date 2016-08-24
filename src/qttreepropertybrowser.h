@@ -107,6 +107,17 @@ public:
     bool propertiesWithoutValueMarked() const;
 
     void editItem(QtBrowserItem *item);
+	
+protected:
+	virtual bool eventFilter(QObject *watched, QEvent *evt);
+	QModelIndex index_resizable(QPoint mouse_pos, Qt::Orientation orientation);
+	
+	int m_drag_previous_pos;
+	int m_drag_section;
+	int m_sensibility;	//dragging around line
+	Qt::Orientation m_drag_orientation;
+	bool m_drag_in_progress;
+public:
 
 Q_SIGNALS:
 

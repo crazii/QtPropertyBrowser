@@ -766,6 +766,14 @@ QtTreePropertyBrowser::QtTreePropertyBrowser(QWidget *parent)
 
     d_ptr->init(this);
     connect(this, SIGNAL(currentItemChanged(QtBrowserItem*)), this, SLOT(slotCurrentBrowserItemChanged(QtBrowserItem*)));
+	
+	m_drag_previous_pos = 0;
+	m_drag_section = 0;
+	m_sensibility = 3;
+	m_drag_orientation = Qt::Horizontal;
+	m_drag_in_progress = false;
+	d_ptr->treeWidget()->viewport()->installEventFilter(this);
+	d_ptr->treeWidget()->viewport()->setMouseTracking(true);
 }
 
 /*!
@@ -1069,6 +1077,81 @@ void QtTreePropertyBrowser::itemChanged(QtBrowserItem *item)
 void QtTreePropertyBrowser::editItem(QtBrowserItem *item)
 {
     d_ptr->editItem(item);
+}
+
+bool QtTreePropertyBrowser::eventFilter(QObject *watched, QEvent *evt)
+{
+	//http://stackoverflow.com/questions/32301965/qtreeview-column-resize-from-columns-and-not-from-headers
+	QTreeView* view = d_ptr->treeWidget();
+
+	if (watched == view->viewport()) {
+		QMouseEvent* mouse_event = static_cast<QMouseEvent*>(evt);//unsafe cast but safe use
+		if (evt->type() == QEvent::MouseMove) {
+			if (m_drag_in_progress) { // apply dragging
+				int delta;
+				QHeaderView* header_view;
+				if (m_drag_orientation == Qt::Horizontal) {
+					delta = mouse_event->pos().x() - m_drag_previous_pos;
+					header_view = view->header();
+					m_drag_previous_pos = mouse_event->pos().x();
+				}
+				//using minimal size = m_sensibility * 2 to prevent collapsing
+				header_view->resizeSection(m_drag_section,
+					qMax(m_sensibility * 2, header_view->sectionSize(m_drag_section) + delta));
+				return true;
+			}
+			else { // set mouse cursor shape
+				if (index_resizable(mouse_event->pos(), Qt::Vertical).isValid()) {
+					view->viewport()->setCursor(Qt::SplitVCursor);
+				}
+				else if (index_resizable(mouse_event->pos(), Qt::Horizontal).isValid()) {
+					view->viewport()->setCursor(Qt::SplitHCursor);
+				}
+				else {
+					view->viewport()->setCursor(QCursor());
+				}
+			}
+		}
+		else if (evt->type() == QEvent::MouseButtonPress &&
+			mouse_event->button() == Qt::LeftButton &&
+			!m_drag_in_progress) { // start dragging
+			if (index_resizable(mouse_event->pos(), Qt::Vertical).isValid()) {
+				m_drag_in_progress = true;
+				m_drag_orientation = Qt::Vertical;
+				m_drag_previous_pos = mouse_event->y();
+				m_drag_section = index_resizable(mouse_event->pos(), Qt::Vertical).row();
+				return true;
+			}
+			else if (index_resizable(mouse_event->pos(), Qt::Horizontal).isValid()) {
+				m_drag_in_progress = true;
+				m_drag_orientation = Qt::Horizontal;
+				m_drag_previous_pos = mouse_event->x();
+				m_drag_section = index_resizable(mouse_event->pos(), Qt::Horizontal).column();
+				return true;
+			}
+		}
+		else if (evt->type() == QEvent::MouseButtonRelease &&
+			mouse_event->button() == Qt::LeftButton &&
+			m_drag_in_progress) { // stop dragging
+			m_drag_in_progress = false;
+            return true;
+		}
+	}
+	return QtAbstractPropertyBrowser::eventFilter(watched, evt);
+}
+QModelIndex QtTreePropertyBrowser::index_resizable(QPoint mouse_pos, Qt::Orientation orientation) {
+	QTreeView* view = d_ptr->treeWidget();
+
+	QModelIndex index = view->indexAt(mouse_pos - QPoint(m_sensibility + 1, m_sensibility + 1));
+	if (index.isValid()) {
+		if (orientation == Qt::Horizontal) {
+			if (qAbs(view->visualRect(index).right() - mouse_pos.x()) < m_sensibility &&
+				view->header()->sectionResizeMode(index.column()) == QHeaderView::Interactive) {
+				return index;
+			}
+		}
+	}
+	return QModelIndex();
 }
 
 #if QT_VERSION >= 0x040400
