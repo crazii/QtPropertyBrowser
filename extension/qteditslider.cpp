@@ -36,6 +36,7 @@ public:
 
 		connect(&mEdit, SIGNAL(returnPressed()), this, SLOT(editFinish()));
 		connect(&mSlider, SIGNAL(valueChanged(int)), this, SLOT(sliderMoved(int)));
+		mEdit.installEventFilter(this);
 	}
 
 	~QtEditSlider()
@@ -134,6 +135,21 @@ protected:
 		mEdit.setMaximumWidth(mEdit.fontMetrics().width(maxS) + mEdit.style()->pixelMetric(QStyle::PM_DefaultFrameWidth)*2 );
 #endif
 	}
+	
+	/** @brief  */
+	virtual bool eventFilter(QObject* watched, QEvent *evt)
+	{
+        Q_UNUSED(watched);
+		if(evt->type() == QEvent::FocusOut)
+			this->editFinish();
+		return false;
+	}
+
+	/** @brief  */
+	virtual void focusInEvent(QFocusEvent* evt)
+	{
+		mEdit.event(evt);
+	}
 
 signals:
 	void valueChanged(double);
@@ -148,6 +164,7 @@ signals:
 			double val = s.toDouble();
 			if(mVal != val )
 			{
+				mVal = val;
 				this->updateSlider(false);
 				emit valueChanged(mVal);
 			}
