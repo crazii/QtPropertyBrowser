@@ -1162,7 +1162,7 @@ QWidget *QtLineEditFactory::createEditor(QtStringPropertyManager *manager,
         editor->setValidator(validator);
     }
     editor->setText(manager->value(property));
-    editor->installEventFilter(this);
+	editor->installEventFilter(this);
 #if 0
     connect(editor, SIGNAL(textChanged(const QString &)),
                 this, SLOT(slotSetValue(const QString &)));
@@ -1201,24 +1201,23 @@ void QtLineEditFactory::disconnectPropertyManager(QtStringPropertyManager *manag
 bool QtLineEditFactory::eventFilter(QObject *watched, QEvent *evt)
 {
 	//terminating routine
-    if (this->propertyManagers().size() == 0 || evt->type() == QEvent::Destroy)
+	if (this->propertyManagers().size() == 0 )
 		return false;
-
-	QLineEdit* lineEdit = qobject_cast<QLineEdit*>(watched);
-    Q_ASSERT(lineEdit != NULL);
 
 	if (evt->type() == QEvent::FocusOut)
 		d_ptr->endEdit(watched);
-	else if (evt->type() == QEvent::KeyPress &&
-		static_cast<QKeyEvent*>(evt)->key() == Qt::Key_Escape)
-    {
+	else if (evt->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(evt)->key() == Qt::Key_Escape)
+	{
+		QLineEdit* lineEdit = qobject_cast<QLineEdit*>(watched);
+        Q_ASSERT(lineEdit != NULL);
+
 		//roll back to last confirmed property value
 		EditorFactoryPrivate<QLineEdit>::EditorToPropertyMap::iterator it = d_ptr->m_editorToProperty.find(lineEdit);
         Q_ASSERT(it != d_ptr->m_editorToProperty.end());
 		QtProperty* prop = it.value();
 		lineEdit->setText(static_cast<QtStringPropertyManager*>(prop->propertyManager())->value(prop));
 	}
-	return false;
+	return QtAbstractEditorFactoryBase::eventFilter(watched, evt);
 }
 
 // QtDateEditFactory

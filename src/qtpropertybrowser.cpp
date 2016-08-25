@@ -59,6 +59,7 @@ public:
     QtPropertyPrivate(QtAbstractPropertyManager *manager)
         : m_enabled(true),
           m_modified(false),
+		  m_backup(QtProperty::BackupToLast),
           m_manager(manager) {}
     QtProperty *q_ptr;
 
@@ -71,6 +72,7 @@ public:
     QString m_name;
     bool m_enabled;
     bool m_modified;
+	QtProperty::BackupMode m_backup;
 
     QtAbstractPropertyManager * const m_manager;
 };
@@ -265,6 +267,17 @@ bool QtProperty::isModified() const
 }
 
 /*!
+    Get whether the property's backup mode while editing.
+
+    \sa setBackupMode()
+*/
+QtProperty::BackupMode QtProperty::backupMode() const
+{
+    return d_ptr->m_backup;
+}
+
+
+/*!
     Returns whether the property has a value.
 
     \sa QtAbstractPropertyManager::hasValue()
@@ -400,6 +413,20 @@ void QtProperty::setModified(bool modified)
 }
 
 /*!
+    Sets the property's backup mode
+
+    \sa backupMode()
+*/
+void QtProperty::setBackupMode(BackupMode mode)
+{
+    if (d_ptr->m_backup == mode)
+        return;
+
+    d_ptr->m_backup = mode;
+    propertyChanged();
+}
+
+/*!
     Appends the given \a property to this property's subproperties.
 
     If the given \a property already is added, this function does
@@ -412,6 +439,7 @@ void QtProperty::addSubProperty(QtProperty *property)
     QtProperty *after = 0;
     if (d_ptr->m_subItems.count() > 0)
         after = d_ptr->m_subItems.last();
+    property->setBackupMode(this->backupMode());
     insertSubProperty(property, after);
 }
 
@@ -1927,6 +1955,21 @@ void QtAbstractPropertyBrowser::removeProperty(QtProperty *property)
         }
         pos++;
     }
+}
+
+/*!
+	Find an editor factory matching the connection of property type
+*/
+QtAbstractEditorFactoryBase* QtAbstractPropertyBrowser::matchFactory(QtProperty* prop)
+{
+	QtAbstractEditorFactoryBase *factory = 0;
+	QtAbstractPropertyManager *manager = prop->propertyManager();
+
+	if (m_viewToManagerToFactory()->contains(this) &&
+		(*m_viewToManagerToFactory())[this].contains(manager)) {
+			factory = (*m_viewToManagerToFactory())[this][manager];
+	}
+	return factory;
 }
 
 /*!

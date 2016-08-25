@@ -45,6 +45,8 @@
 #include <QWidget>
 #include <QSet>
 #include <QLineEdit>
+#include <QDateTime>
+#include <QKeyEvent>
 
 #if QT_VERSION >= 0x040400
 QT_BEGIN_NAMESPACE
@@ -74,6 +76,12 @@ class QtPropertyPrivate;
 class QT_QTPROPERTYBROWSER_EXPORT QtProperty
 {
 public:
+	enum BackupMode
+	{
+		NoBackup,
+		BackupToInitial,
+		BackupToLast,
+	};
     virtual ~QtProperty();
 
     QList<QtProperty *> subProperties() const;
@@ -86,6 +94,7 @@ public:
     QString propertyName() const;
     bool isEnabled() const;
     bool isModified() const;
+	BackupMode backupMode() const;
 
     bool hasValue() const;
     QIcon valueIcon() const;
@@ -98,6 +107,7 @@ public:
     void setPropertyName(const QString &text);
     void setEnabled(bool enable);
     void setModified(bool modified);
+	void setBackupMode(BackupMode mode);
 
     void addSubProperty(QtProperty *property);
     void insertSubProperty(QtProperty *property, QtProperty *afterProperty);
@@ -164,6 +174,58 @@ protected Q_SLOTS:
 };
 
 template <class PropertyManager>
+class QtBackupMananger
+{
+public:
+	typedef typename PropertyManager::value_type value_type;
+	///note: one property can have multiple editors, so create per editor backup
+	///this is also easy and won't change implementations of QtAbstractPropertyManager
+	void backup(PropertyManager* manger, QtProperty* prop, QWidget* editor)
+	{
+		value_type val = manger->value(prop);
+		QtBakcupItem bi = {prop, val};
+		mBackupMap[editor] = bi;
+	}
+	void backup(QWidget* editor)
+	{
+		EditorToBackup::iterator it = mBackupMap.find(editor);
+		if(it != mBackupMap.end())
+		{
+			QtProperty* p = it.value().prop;
+			if(p->backupMode() == QtProperty::BackupToLast)
+			{
+				PropertyManager* pm = static_cast<PropertyManager*>(p->propertyManager());
+				it.value().val = pm->value(p);
+			}
+		}
+	}
+	void restore(QWidget* editor)
+	{
+		EditorToBackup::iterator it = mBackupMap.find(editor);
+		if(it != mBackupMap.end())
+		{
+			QtProperty* p = it.value().prop;
+			PropertyManager* pm = static_cast<PropertyManager*>(p->propertyManager());
+			pm->setValue(p, it.value().val);
+		}
+	}
+	void remove(QWidget* editor)
+	{
+		EditorToBackup::iterator it = mBackupMap.find(editor);
+		if(it != mBackupMap.end())
+			mBackupMap.erase(it);
+	}
+protected:
+	struct QtBakcupItem
+	{
+		QtProperty*	prop;
+		value_type	val;
+	};
+	typedef QMap<QWidget*, QtBakcupItem> EditorToBackup;
+	EditorToBackup mBackupMap;
+};
+
+template <class PropertyManager>
 class QtAbstractEditorFactory : public QtAbstractEditorFactoryBase
 {
 public:
@@ -174,7 +236,15 @@ public:
         while (it.hasNext()) {
             PropertyManager *manager = it.next();
             if (manager == property->propertyManager()) {
-                return createEditor(manager, property, parent);
+                 QWidget* widget = createEditor(manager, property, parent);
+				///note: change backup mode in the middle of editing won't change 
+				///its behavior
+				if(widget != Q_NULLPTR && property->backupMode() != QtProperty::NoBackup)
+				{
+					widget->installEventFilter(this);
+					mBackupManager.backup(manager, property, widget);
+				}
+				return widget;
             }
         }
         return 0;
@@ -229,6 +299,19 @@ protected:
             }
         }
     }
+
+	virtual bool eventFilter(QObject *watched, QEvent *evt)
+	{
+		QWidget* editor = static_cast<QWidget*>(watched);//unsafe cast but safe use in map
+		if(evt->type() == QEvent::FocusIn)
+			mBackupManager.backup(editor);
+		else if(evt->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(evt)->key() == Qt::Key_Escape)
+			mBackupManager.restore(editor);
+		else if(evt->type() == QEvent::Destroy)
+			mBackupManager.remove(editor);
+		return false;
+	}
+	QtBackupMananger<PropertyManager> mBackupManager;
 private:
     void breakConnection(QtAbstractPropertyManager *manager)
     {
@@ -303,6 +386,7 @@ public Q_SLOTS:
     QtBrowserItem *insertProperty(QtProperty *property, QtProperty *afterProperty);
     void removeProperty(QtProperty *property);
 
+	QtAbstractEditorFactoryBase* matchFactory(QtProperty* prop);
 protected:
 
     virtual void itemInserted(QtBrowserItem *item, QtBrowserItem *afterItem) = 0;

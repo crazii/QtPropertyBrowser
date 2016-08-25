@@ -79,6 +79,7 @@ class QT_QTPROPERTYBROWSER_EXPORT QtVariantPropertyManager : public QtAbstractPr
 {
     Q_OBJECT
 public:
+	typedef QVariant value_type;
     QtVariantPropertyManager(QObject *parent = 0);
     ~QtVariantPropertyManager();
 

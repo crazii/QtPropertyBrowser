@@ -109,6 +109,7 @@ int main(int argc, char **argv)
     QtEnumEditorFactory *comboBoxFactory = new QtEnumEditorFactory(w);
 
     QtAbstractPropertyBrowser *editor1 = new QtTreePropertyBrowser();
+    static_cast<QtTreePropertyBrowser*>(editor1)->setResizeMode(QtTreePropertyBrowser::Interactive);
     editor1->setFactoryForManager(boolManager, checkBoxFactory);
     editor1->setFactoryForManager(intManager, spinBoxFactory);
     editor1->setFactoryForManager(stringManager, lineEditFactory);
@@ -121,6 +122,7 @@ int main(int argc, char **argv)
     editor1->addProperty(item0);
 
     QtAbstractPropertyBrowser *editor2 = new QtTreePropertyBrowser();
+    static_cast<QtTreePropertyBrowser*>(editor2)->setResizeMode(QtTreePropertyBrowser::Interactive);
     editor2->addProperty(item0);
 
     QtAbstractPropertyBrowser *editor3 = new QtGroupBoxPropertyBrowser();

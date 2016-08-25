@@ -158,8 +158,9 @@ protected:
 	/** @brief  */
 	virtual void focusInEvent(QFocusEvent* evt)
 	{
-		mEdit.event(evt);
+        Q_UNUSED(evt);
 		mEdit.selectAll();
+		mEdit.setFocus();
 	}
 
 signals:
