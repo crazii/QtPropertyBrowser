@@ -1143,11 +1143,21 @@ QModelIndex QtTreePropertyBrowser::index_resizable(QPoint mouse_pos, Qt::Orienta
 	QTreeView* view = d_ptr->treeWidget();
 
 	QModelIndex index = view->indexAt(mouse_pos - QPoint(m_sensibility + 1, m_sensibility + 1));
-	if (index.isValid()) {
+	if (index.isValid() &&
+		view->header()->sectionResizeMode(index.column()) == QHeaderView::Interactive) {
 		if (orientation == Qt::Horizontal) {
-			if (qAbs(view->visualRect(index).right() - mouse_pos.x()) < m_sensibility &&
-				view->header()->sectionResizeMode(index.column()) == QHeaderView::Interactive) {
-				return index;
+			if (d_ptr->editedItem() == Q_NULLPTR)
+			{
+				if (qAbs(view->visualRect(index).right() - mouse_pos.x()) < m_sensibility) {
+					return index;
+				}
+			}
+			else
+			{
+				if (view->visualRect(index).right() - mouse_pos.x() > 1 &&
+					view->visualRect(index).right() - mouse_pos.x() < m_sensibility + 2 &&
+					index.column() == 0)
+					return index;
 			}
 		}
 	}
