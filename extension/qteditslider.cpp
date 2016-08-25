@@ -142,6 +142,16 @@ protected:
         Q_UNUSED(watched);
 		if(evt->type() == QEvent::FocusOut)
 			this->editFinish();
+		else if (evt->type() == QEvent::KeyPress)
+		{
+			QKeyEvent* ke = static_cast<QKeyEvent*>(evt);
+			if (ke->key() == Qt::Key_Escape)
+			{
+				//rollback
+				mEdit.setText(QString("%0").arg(mVal, 0, 'f', mValidator.decimals()));
+				mEdit.selectAll();
+			}
+		}
 		return false;
 	}
 
