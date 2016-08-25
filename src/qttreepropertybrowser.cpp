@@ -113,6 +113,7 @@ private:
     bool m_markPropertiesWithoutValue;
     bool m_browserChangedBlocked;
     QIcon m_expandIcon;
+    friend class QtPropertyEditorDelegate;
 };
 
 // ------------ QtPropertyEditorView
@@ -419,6 +420,17 @@ bool QtPropertyEditorDelegate::eventFilter(QObject *object, QEvent *event)
         if (fe->reason() == Qt::ActiveWindowFocusReason)
             return false;
     }
+	else if(event->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape)
+	{
+		//hack:
+		//although factory is already installed event filter,
+		//but QtPropertyEditorDelegate handles filters event first
+		//and QtPropertyEditorDelegate filters ESC
+		QtProperty* prop = m_editorPrivate->currentItem()->property();
+		QtAbstractEditorFactoryBase* factory = m_editorPrivate->q_func()->matchFactory(prop);
+		Q_ASSERT(factory);
+		factory->eventFilter(object, event);
+	}
     return QItemDelegate::eventFilter(object, event);
 }
 
@@ -1134,7 +1146,7 @@ bool QtTreePropertyBrowser::eventFilter(QObject *watched, QEvent *evt)
 			mouse_event->button() == Qt::LeftButton &&
 			m_drag_in_progress) { // stop dragging
 			m_drag_in_progress = false;
-            return true;
+			return true;
 		}
 	}
 	return QtAbstractPropertyBrowser::eventFilter(watched, evt);
@@ -1144,9 +1156,9 @@ QModelIndex QtTreePropertyBrowser::index_resizable(QPoint mouse_pos, Qt::Orienta
 
 	QModelIndex index = view->indexAt(mouse_pos - QPoint(m_sensibility + 1, m_sensibility + 1));
 	if (index.isValid() &&
-		view->header()->sectionResizeMode(index.column()) == QHeaderView::Interactive) {
+		view->header()->sectionResizeMode(index.column()) == QHeaderView::Interactive ) {
 		if (orientation == Qt::Horizontal) {
-			if (d_ptr->editedItem() == Q_NULLPTR)
+			if (d_ptr->editedItem() == Q_NULLPTR || view->currentIndex().row() != index.row() )
 			{
 				if (qAbs(view->visualRect(index).right() - mouse_pos.x()) < m_sensibility) {
 					return index;
