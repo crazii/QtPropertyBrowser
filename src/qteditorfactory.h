@@ -184,6 +184,7 @@ protected:
                 QWidget *parent);
     void disconnectPropertyManager(QtStringPropertyManager *manager);
 private:
+	virtual bool eventFilter(QObject *watched, QEvent *evt);
     QtLineEditFactoryPrivate *d_ptr;
     Q_DECLARE_PRIVATE(QtLineEditFactory)
     Q_DISABLE_COPY(QtLineEditFactory)

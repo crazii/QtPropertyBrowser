@@ -159,6 +159,7 @@ protected:
 	virtual void focusInEvent(QFocusEvent* evt)
 	{
 		mEdit.event(evt);
+		mEdit.selectAll();
 	}
 
 signals:
