@@ -544,6 +544,17 @@ void QtDoubleEditSliderFactory::disconnectPropertyManager(QtDoublePropertyManage
 		this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
 }
 
+//////////////////////////////////////////////////////////////////////////
+bool QtDoubleEditSliderFactory::setValue(QWidget* editor, value_type val) const
+{
+    QtEditSlider* slider = qobject_cast<QtEditSlider*>(editor);
+	if (slider != NULL)
+	{
+		slider->setValue(val);
+		return true;
+	}
+	return false;
+}
 /************************************************************************/
 /*                                                                      */
 /************************************************************************/
@@ -706,6 +717,17 @@ void QtIntEditSliderFactory::disconnectPropertyManager(QtIntPropertyManager *man
 		this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
 }
 
+//////////////////////////////////////////////////////////////////////////
+bool QtIntEditSliderFactory::setValue(QWidget* editor, value_type val) const
+{
+    QtEditSlider* slider = qobject_cast<QtEditSlider*>(editor);
+	if (slider != NULL)
+	{
+		slider->setValue((double)val);
+		return true;
+	}
+	return false;
+}
 /************************************************************************/
 /*                                                                      */
 /************************************************************************/

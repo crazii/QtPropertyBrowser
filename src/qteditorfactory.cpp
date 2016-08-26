@@ -318,6 +318,17 @@ void QtSpinBoxFactory::disconnectPropertyManager(QtIntPropertyManager *manager)
                 this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
 }
 
+bool QtSpinBoxFactory::setValue(QWidget* editor, value_type val) const
+{
+	QSpinBox* spin = qobject_cast<QSpinBox*>(editor);
+	if (spin != NULL)
+	{
+		spin->setValue(val);
+		return true;
+	}
+	return false;
+}
+
 // QtSliderFactory
 
 class QtSliderFactoryPrivate : public EditorFactoryPrivate<QSlider>
@@ -966,6 +977,16 @@ void QtDoubleSpinBoxFactory::disconnectPropertyManager(QtDoublePropertyManager *
                 this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
 }
 
+bool QtDoubleSpinBoxFactory::setValue(QWidget* editor, value_type val) const
+{
+	QDoubleSpinBox* spin = qobject_cast<QDoubleSpinBox*>(editor);
+	if (spin != NULL)
+	{
+		spin->setValue(val);
+		return true;
+	}
+	return false;
+}
 // QtLineEditFactory
 
 class QtLineEditFactoryPrivate : public EditorFactoryPrivate<QLineEdit>
@@ -1162,7 +1183,6 @@ QWidget *QtLineEditFactory::createEditor(QtStringPropertyManager *manager,
         editor->setValidator(validator);
     }
     editor->setText(manager->value(property));
-	editor->installEventFilter(this);
 #if 0
     connect(editor, SIGNAL(textChanged(const QString &)),
                 this, SLOT(slotSetValue(const QString &)));
@@ -1196,28 +1216,34 @@ void QtLineEditFactory::disconnectPropertyManager(QtStringPropertyManager *manag
 /*!
 	\internal
 
+	Set editor's value
+*/
+bool QtLineEditFactory::setValue(QWidget* editor, value_type val) const
+{
+	QLineEdit* lineEdit = qobject_cast<QLineEdit*>(editor);
+	if (lineEdit != NULL)
+	{
+		lineEdit->setText(val);
+		return true;
+	}
+	return false;
+}
+
+/*!
+	\internal
+
 	Signal value change on focus out
 */
 bool QtLineEditFactory::eventFilter(QObject *watched, QEvent *evt)
 {
 	//terminating routine
-	if (this->propertyManagers().size() == 0 )
-		return false;
-
 	if (evt->type() == QEvent::FocusOut)
-		d_ptr->endEdit(watched);
-	else if (evt->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(evt)->key() == Qt::Key_Escape)
 	{
-		QLineEdit* lineEdit = qobject_cast<QLineEdit*>(watched);
-        Q_ASSERT(lineEdit != NULL);
-
-		//roll back to last confirmed property value
-		EditorFactoryPrivate<QLineEdit>::EditorToPropertyMap::iterator it = d_ptr->m_editorToProperty.find(lineEdit);
-        Q_ASSERT(it != d_ptr->m_editorToProperty.end());
-		QtProperty* prop = it.value();
-		lineEdit->setText(static_cast<QtStringPropertyManager*>(prop->propertyManager())->value(prop));
+		if (this->propertyManagers().size() == 0)
+			return false;
+		d_ptr->endEdit(watched);
 	}
-	return QtAbstractEditorFactoryBase::eventFilter(watched, evt);
+	return QtAbstractEditorFactory<QtStringPropertyManager>::eventFilter(watched, evt);
 }
 
 // QtDateEditFactory

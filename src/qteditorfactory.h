@@ -62,6 +62,7 @@ protected:
                 QWidget *parent);
     void disconnectPropertyManager(QtIntPropertyManager *manager);
 private:
+	virtual bool setValue(QWidget* editor, value_type val) const;
     QtSpinBoxFactoryPrivate *d_ptr;
     Q_DECLARE_PRIVATE(QtSpinBoxFactory)
     Q_DISABLE_COPY(QtSpinBoxFactory)
@@ -158,6 +159,7 @@ protected:
                 QWidget *parent);
     void disconnectPropertyManager(QtDoublePropertyManager *manager);
 private:
+	virtual bool setValue(QWidget* editor, value_type val) const;
     QtDoubleSpinBoxFactoryPrivate *d_ptr;
     Q_DECLARE_PRIVATE(QtDoubleSpinBoxFactory)
     Q_DISABLE_COPY(QtDoubleSpinBoxFactory)
@@ -184,6 +186,7 @@ protected:
                 QWidget *parent);
     void disconnectPropertyManager(QtStringPropertyManager *manager);
 private:
+	virtual bool setValue(QWidget* editor, value_type val) const;
 	virtual bool eventFilter(QObject *watched, QEvent *evt);
     QtLineEditFactoryPrivate *d_ptr;
     Q_DECLARE_PRIVATE(QtLineEditFactory)

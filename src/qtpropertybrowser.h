@@ -79,8 +79,9 @@ public:
 	enum BackupMode
 	{
 		NoBackup,
-		BackupToInitial,
-		BackupToLast,
+		BackupToInitial,	//back to initial value when editor created
+		BackupToLast,		//back to last value when editor activate/gaining focus
+		BackupToCurrent,	//back to current (latest committed) property value, useful for focus editing mode only (i.e. line edit, spin)
 	};
     virtual ~QtProperty();
 
@@ -192,22 +193,28 @@ public:
 		if(it != mBackupMap.end())
 		{
 			QtProperty* p = it.value().prop;
-			if(p->backupMode() == QtProperty::BackupToLast)
+			if(p->backupMode() != QtProperty::BackupToInitial)
 			{
 				PropertyManager* pm = static_cast<PropertyManager*>(p->propertyManager());
 				it.value().val = pm->value(p);
 			}
 		}
 	}
-	void restore(QWidget* editor)
+	bool restore(QWidget* editor, value_type& outVal)
 	{
 		EditorToBackup::iterator it = mBackupMap.find(editor);
 		if(it != mBackupMap.end())
 		{
 			QtProperty* p = it.value().prop;
 			PropertyManager* pm = static_cast<PropertyManager*>(p->propertyManager());
-			pm->setValue(p, it.value().val);
+			if (p->backupMode() == QtProperty::BackupToCurrent)
+				it.value().val = pm->value(p);
+			else
+				pm->setValue(p, it.value().val);
+			outVal = it.value().val;
+			return true;
 		}
+		return false;
 	}
 	void remove(QWidget* editor)
 	{
@@ -229,6 +236,8 @@ template <class PropertyManager>
 class QtAbstractEditorFactory : public QtAbstractEditorFactoryBase
 {
 public:
+	typedef typename QtBackupMananger<PropertyManager>::value_type value_type;
+
     explicit QtAbstractEditorFactory(QObject *parent) : QtAbstractEditorFactoryBase(parent) {}
     QWidget *createEditor(QtProperty *property, QWidget *parent)
     {
@@ -299,14 +308,24 @@ protected:
             }
         }
     }
+	
+	//TODO: this is much better, but need modify each implementation
+	virtual value_type value(QWidget* editor) const { Q_UNUSED(editor); return value_type(); }
+	virtual bool setValue(QWidget* editor, value_type val) const { Q_UNUSED(editor); Q_UNUSED(val); return false; }
 
 	virtual bool eventFilter(QObject *watched, QEvent *evt)
 	{
 		QWidget* editor = static_cast<QWidget*>(watched);//unsafe cast but safe use in map
 		if(evt->type() == QEvent::FocusIn)
+		{
 			mBackupManager.backup(editor);
-		else if(evt->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(evt)->key() == Qt::Key_Escape)
-			mBackupManager.restore(editor);
+		}
+		else if (evt->type() == QEvent::KeyPress && static_cast<QKeyEvent*>(evt)->key() == Qt::Key_Escape)
+		{
+			value_type val;
+			if (mBackupManager.restore(editor, val))
+				this->setValue(editor, val);
+		}
 		else if(evt->type() == QEvent::Destroy)
 			mBackupManager.remove(editor);
 		return false;

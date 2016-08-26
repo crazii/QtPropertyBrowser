@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     QtProperty *item0 = groupManager->addProperty("QObject");
 
     QtProperty *item1 = stringManager->addProperty("objectName");
+    item1->setBackupMode(QtProperty::BackupToCurrent);
     item0->addSubProperty(item1);
 
     QtProperty *item2 = boolManager->addProperty("enabled");

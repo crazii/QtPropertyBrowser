@@ -30,6 +30,7 @@ public:
 		QWidget *parent);
 	void disconnectPropertyManager(QtDoublePropertyManager *manager);
 private:
+    virtual bool setValue(QWidget* editor, value_type val) const;
 	QtDoubleEditSliderFactoryPrivate *d_ptr;
 	Q_DECLARE_PRIVATE(QtDoubleEditSliderFactory)
 		Q_DISABLE_COPY(QtDoubleEditSliderFactory)
@@ -62,6 +63,7 @@ public:
 		QWidget *parent);
 	void disconnectPropertyManager(QtIntPropertyManager *manager);
 private:
+    virtual bool setValue(QWidget* editor, value_type val) const;
 	QtIntEditSliderFactoryPrivate *d_ptr;
 	Q_DECLARE_PRIVATE(QtIntEditSliderFactory)
 		Q_DISABLE_COPY(QtIntEditSliderFactory)
