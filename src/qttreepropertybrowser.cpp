@@ -1091,6 +1091,47 @@ void QtTreePropertyBrowser::editItem(QtBrowserItem *item)
     d_ptr->editItem(item);
 }
 
+static int treeCount(QTreeWidget *tree, QTreeWidgetItem *parent = 0)
+{
+    int count = 0;
+    if (parent == 0) {
+        int topCount = tree->topLevelItemCount();
+        for (int i = 0; i < topCount; i++) {
+            QTreeWidgetItem *item = tree->topLevelItem(i);
+            if (item->isExpanded()) {
+                count += treeCount(tree, item);
+            }
+        }
+        count += topCount;
+    } else {
+        int childCount = parent->childCount();
+        for (int i = 0; i < childCount; i++) {
+            QTreeWidgetItem *item = parent->child(i);
+            if (item->isExpanded()) {
+                count += treeCount(tree, item);
+            }
+        }
+        count += childCount;
+    }
+    return count;
+}
+
+/*!
+    Gets ideal height with respect to current expanding status
+*/
+int QtTreePropertyBrowser::idealHeight() const
+{
+    int count = treeCount(d_ptr->treeWidget());
+    int height = this->isHeaderVisible() ? d_ptr->treeWidget()->header()->sizeHint().height() : 0;
+    if(count > 0)
+    {
+        QTreeWidgetItem *treeItem = d_ptr->treeWidget()->topLevelItem(0);
+        int rowHeight = d_ptr->treeWidget()->visualItemRect(treeItem).height();
+        height = rowHeight * count;
+    }
+    return height;
+}
+
 bool QtTreePropertyBrowser::eventFilter(QObject *watched, QEvent *evt)
 {
 	//http://stackoverflow.com/questions/32301965/qtreeview-column-resize-from-columns-and-not-from-headers

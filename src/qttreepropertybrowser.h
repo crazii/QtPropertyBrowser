@@ -109,6 +109,7 @@ public:
     void editItem(QtBrowserItem *item);
 	
 protected:
+    int idealHeight() const;
 	virtual bool eventFilter(QObject *watched, QEvent *evt);
 	QModelIndex index_resizable(QPoint mouse_pos, Qt::Orientation orientation);
 	
