@@ -1127,7 +1127,7 @@ int QtTreePropertyBrowser::idealHeight() const
     {
         QTreeWidgetItem *treeItem = d_ptr->treeWidget()->topLevelItem(0);
         int rowHeight = d_ptr->treeWidget()->visualItemRect(treeItem).height();
-        height = rowHeight * count;
+        height += rowHeight * count;
     }
     return height;
 }
