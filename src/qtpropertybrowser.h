@@ -315,6 +315,10 @@ protected:
 
 	virtual bool eventFilter(QObject *watched, QEvent *evt)
 	{
+		//destruction safety guard
+		if (this->propertyManagers().size() == 0)
+			return false;
+		
 		QWidget* editor = static_cast<QWidget*>(watched);//unsafe cast but safe use in map
 		if(evt->type() == QEvent::FocusIn)
 		{
